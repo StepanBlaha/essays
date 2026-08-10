@@ -57,12 +57,31 @@ export default function Home() {
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-6">
           <span className="font-[family-name:var(--font-book)] text-sm font-medium text-muted-foreground">
-            {selected ? selected.title.trim() || "Untitled" : "Essays"}
+            {showShelf
+              ? "Library"
+              : selected
+                ? selected.title.trim() || "Untitled"
+                : "Essays"}
           </span>
         </header>
 
         <main className="relative min-h-0 flex-1">
-          {selected ? (
+          {showShelf ? (
+            <Library
+              books={books}
+              essays={essays}
+              onClose={() => setShowShelf(false)}
+              onNewBook={async (data) => {
+                const id = await createBook(data);
+                setActiveBookId(id);
+              }}
+              onDeleteBook={deleteBook}
+              onEnterReader={(id) => {
+                setReaderBookId(id);
+                setShowShelf(false);
+              }}
+            />
+          ) : selected ? (
             <Editor essay={selected} />
           ) : (
             <div className="grid h-full place-items-center px-6 text-center">
@@ -73,23 +92,6 @@ export default function Home() {
           )}
         </main>
       </SidebarInset>
-
-      {showShelf && (
-        <Library
-          books={books}
-          essays={essays}
-          onClose={() => setShowShelf(false)}
-          onNewBook={async (data) => {
-            const id = await createBook(data);
-            setActiveBookId(id);
-          }}
-          onDeleteBook={deleteBook}
-          onEnterReader={(id) => {
-            setReaderBookId(id);
-            setShowShelf(false);
-          }}
-        />
-      )}
 
       {readerBook && (
         <Collection

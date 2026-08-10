@@ -256,6 +256,82 @@
   -webkit-mask-image: linear-gradient(#000 76%, transparent);
   mask-image: linear-gradient(#000 76%, transparent);
 }
+
+/* Rendered TipTap HTML (rich formatting shows in the book) */
+.rich {
+  white-space: normal;
+  text-align: left;
+}
+.rich :where(h1, h2, h3) {
+  font-family: var(--font-book);
+  font-weight: 600;
+  font-size: 1.15em;
+  line-height: 1.25;
+  margin: 0.9em 0 0.35em;
+}
+.rich p {
+  margin: 0 0 0.7em;
+}
+.rich ul,
+.rich ol {
+  margin: 0 0 0.7em 1.3em;
+}
+.rich ul {
+  list-style: disc;
+}
+.rich ol {
+  list-style: decimal;
+}
+.rich li {
+  margin: 0.15em 0;
+}
+.rich strong {
+  font-weight: 600;
+}
+.rich em {
+  font-style: italic;
+}
+.rich s,
+.rich del {
+  text-decoration: line-through;
+}
+.rich u {
+  text-decoration: underline;
+}
+.rich a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rich blockquote {
+  margin: 0.7em 0;
+  padding-left: 0.9em;
+  border-left: 2px solid var(--border);
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+.rich code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.rich pre {
+  margin: 0.7em 0;
+  padding: 0.7em 0.9em;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.rich pre code {
+  background: none;
+  padding: 0;
+}
+.rich hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1em 0;
+}
 .pageNum {
   position: absolute;
   bottom: 1rem;

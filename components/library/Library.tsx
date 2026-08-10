@@ -19,14 +19,24 @@ import { cn } from "@/lib/utils";
 export type NewBookData = { title: string; author: string; color: string };
 
 const PALETTE = [
-  "#c8c2b6",
+  "#e6e1d7",
   "#d8c9a3",
+  "#c8c2b6",
+  "#c9a27a",
+  "#d98c6a",
   "#b7796a",
-  "#7f8a80",
-  "#5f7480",
+  "#a24b3c",
   "#8a5a44",
+  "#9a8f6b",
+  "#7f8a80",
+  "#6b7f5e",
+  "#4a5d4a",
+  "#5f7480",
+  "#4a6b82",
   "#3f4247",
   "#2f3b3a",
+  "#7a5c8a",
+  "#2b2b2b",
 ];
 
 /** Pick a readable text color for a given cover color. */
@@ -75,21 +85,16 @@ export function Library({
   };
 
   return (
-    <div className="animate-in fade-in fixed inset-0 z-40 flex flex-col bg-background duration-200 motion-reduce:animate-none">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
-        <h2 className="font-[family-name:var(--font-book)] text-lg font-semibold tracking-tight">
-          Library
-        </h2>
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setCreating(true)}>
-            <Plus data-icon="inline-start" />
-            New book
-          </Button>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            <X data-icon="inline-start" />
-            Close
-          </Button>
-        </div>
+    <div className="flex h-full flex-col bg-background">
+      <header className="flex h-14 shrink-0 items-center justify-end gap-2 border-b border-border px-6">
+        <Button size="sm" onClick={() => setCreating(true)}>
+          <Plus data-icon="inline-start" />
+          New book
+        </Button>
+        <Button variant="outline" size="sm" onClick={onClose}>
+          <X data-icon="inline-start" />
+          Close
+        </Button>
       </header>
 
       <div className="flex-1 overflow-y-auto p-6 sm:p-10">
@@ -222,13 +227,35 @@ export function Library({
                     aria-label={`Color ${c}`}
                     onClick={() => setColor(c)}
                     className={cn(
-                      "size-8 rounded-full ring-1 ring-black/10 transition",
-                      color === c &&
+                      "size-7 rounded-full ring-1 ring-black/10 transition",
+                      color.toLowerCase() === c.toLowerCase() &&
                         "ring-2 ring-ring ring-offset-2 ring-offset-background",
                     )}
                     style={{ background: c }}
                   />
                 ))}
+                {/* custom color */}
+                <label
+                  className={cn(
+                    "relative size-7 cursor-pointer overflow-hidden rounded-full ring-1 ring-black/10 transition",
+                    !PALETTE.some(
+                      (c) => c.toLowerCase() === color.toLowerCase(),
+                    ) && "ring-2 ring-ring ring-offset-2 ring-offset-background",
+                  )}
+                  style={{
+                    background:
+                      "conic-gradient(#f87171,#fbbf24,#34d399,#60a5fa,#a78bfa,#f87171)",
+                  }}
+                  title="Custom color"
+                >
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    aria-label="Custom color"
+                  />
+                </label>
               </div>
             </div>
 

@@ -187,7 +187,14 @@ export default function Collection({
             <div className={styles.pageMeta}>
               {text ? `${readingTime(text)} min read` : "Empty page"}
             </div>
-            <div className={styles.pageText}>{text}</div>
+            {essay.html.trim() ? (
+              <div
+                className={`${styles.pageText} ${styles.rich}`}
+                dangerouslySetInnerHTML={{ __html: essay.html }}
+              />
+            ) : (
+              <div className={styles.pageText}>{text}</div>
+            )}
           </div>
           <Tooltip>
             <TooltipTrigger
