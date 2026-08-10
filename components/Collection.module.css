@@ -1,0 +1,460 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  /* Re-evaluate foreground here (the overlay carries `.dark`) so inherited
+     text — e.g. ghost prev/next buttons — is light on the dark backdrop. */
+  color: var(--foreground);
+  background: rgba(18, 18, 18, 0.58);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: fade 0.45s ease;
+  transition: opacity 720ms ease;
+}
+.overlay.closing {
+  opacity: 0;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    transition: none;
+  }
+}
+
+/* Inline edit panel — editing stays inside the collection page.
+   The reader overlay carries the `dark` class so shadcn tokens flip to
+   dark values (readable text/borders on the translucent backdrop). This
+   panel is a LIGHT surface, so we reset the token set locally back to
+   their light-mode values (copied from :root in globals.css) — this
+   keeps the Button/Editor primitives inside it correctly themed without
+   touching globals.css or the ambient `dark` class on the overlay. */
+.editPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  animation: fade 0.2s ease;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  color: var(--foreground);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+.editBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+.editBarTitle {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editBody {
+  flex: 1;
+  min-height: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+}
+.brand {
+  font-family: var(--font-book);
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 3vw, 2rem);
+  padding: 0 1rem;
+  perspective: 2800px;
+}
+
+.arrow {
+  flex: none;
+}
+
+/* ---- Book ---- */
+.book {
+  position: relative;
+  height: min(78vh, 760px);
+  max-width: 94vw;
+  aspect-ratio: 3 / 2; /* two 3:4 pages side by side */
+  transform-style: preserve-3d;
+  animation: bookIn 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes bookIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .book {
+    animation: none;
+  }
+}
+
+/* ---- A leaf: occupies the right half only ---- */
+.leaf {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transform: rotateY(0deg);
+  transition: transform 720ms cubic-bezier(0.4, 0.05, 0.2, 1);
+}
+.leaf.leafFlipped {
+  transform: rotateY(-180deg);
+}
+.leaf.noTransition {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .leaf {
+    transition: none;
+  }
+}
+
+.leafFace {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.leafBack {
+  transform: rotateY(180deg);
+}
+
+/* ---- A page (one face of a leaf) ---- */
+/* Pages are always light paper, regardless of the ambient `dark` class on
+   the reader overlay — reset the shadcn tokens locally (same light values
+   as :root in globals.css) so the pencil edit Button on the page reads
+   correctly instead of inheriting the overlay's dark-mode tokens. */
+.page {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #fcfcfa;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  color: var(--foreground);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+.left {
+  border-radius: 6px 0 0 6px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), inset -1px 0 0 rgba(0, 0, 0, 0.06);
+}
+.right {
+  border-radius: 0 6px 6px 0;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), inset 1px 0 0 rgba(0, 0, 0, 0.06);
+}
+.leafFace[role="button"] {
+  cursor: pointer;
+}
+.leafFace[role="button"]:hover .pageTitle {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.pageInner {
+  height: 100%;
+  padding: clamp(1.5rem, 3.2vw, 2.8rem) clamp(1.5rem, 3.2vw, 2.6rem)
+    clamp(2.4rem, 4vw, 3.4rem);
+  display: flex;
+  flex-direction: column;
+}
+.pageTitle {
+  font-family: var(--font-book);
+  font-weight: 600;
+  font-size: clamp(1.1rem, 2.1vw, 1.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  margin-bottom: 0.4rem;
+}
+.pageMeta {
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin-bottom: clamp(0.8rem, 2vw, 1.3rem);
+}
+.pageText {
+  flex: 1;
+  min-height: 0;
+  font-family: var(--font-book);
+  font-size: clamp(0.9rem, 1.5vw, 1.02rem);
+  line-height: 1.75;
+  color: var(--foreground);
+  text-align: justify;
+  hyphens: auto;
+  white-space: pre-wrap;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 76%, transparent);
+  mask-image: linear-gradient(#000 76%, transparent);
+}
+.pageNum {
+  position: absolute;
+  bottom: 1rem;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+.left .pageNum {
+  left: clamp(1.5rem, 3.2vw, 2.6rem);
+}
+.right .pageNum {
+  right: clamp(1.5rem, 3.2vw, 2.6rem);
+}
+
+.editBtn {
+  position: absolute;
+  top: clamp(1rem, 2.4vw, 1.5rem);
+  right: clamp(1rem, 2.4vw, 1.5rem);
+  /* Honor the leaf face's backface culling so the hidden face's button
+     can't ghost through onto the opposite page. */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.blankMark {
+  color: var(--muted-foreground);
+  font-size: 26px;
+}
+
+/* ---- Colophon page ---- */
+.titlePage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  text-align: center;
+}
+.titleMark {
+  color: var(--muted-foreground);
+  font-size: 22px;
+}
+.titleCount {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* ---- Contents (table of contents) page ---- */
+.contentsInner {
+  height: 100%;
+  padding: clamp(1.8rem, 3.6vw, 3rem) clamp(1.5rem, 3.2vw, 2.6rem)
+    clamp(2.4rem, 4vw, 3.4rem);
+  display: flex;
+  flex-direction: column;
+}
+.contentsBookTitle {
+  font-family: var(--font-book);
+  font-weight: 600;
+  font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--foreground);
+}
+.contentsBookAuthor {
+  font-family: var(--font-book);
+  font-style: italic;
+  font-size: clamp(0.85rem, 1.5vw, 1rem);
+  color: var(--muted-foreground);
+  margin-top: 0.2rem;
+}
+.contentsHeading {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin-top: clamp(1rem, 2.4vw, 1.6rem);
+  margin-bottom: clamp(0.8rem, 2vw, 1.2rem);
+}
+.contentsList {
+  flex: 1;
+  min-height: 0;
+  list-style: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 82%, transparent);
+  mask-image: linear-gradient(#000 82%, transparent);
+}
+.contentsRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-book);
+}
+.contentsNum {
+  flex: none;
+  width: 1.6em;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+.contentsTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(0.9rem, 1.5vw, 1.02rem);
+  line-height: 1.35;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.contentsMeta {
+  flex: none;
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.contentsEmpty {
+  font-family: var(--font-book);
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+/* ---- Covers ---- */
+.cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  text-align: center;
+  background: linear-gradient(135deg, #2f2620 0%, #1e1815 100%);
+}
+.coverMark {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 28px;
+}
+.coverTitle {
+  font-family: var(--font-book);
+  font-weight: 600;
+  font-size: clamp(1.4rem, 3vw, 2.1rem);
+  color: rgba(255, 255, 255, 0.94);
+  letter-spacing: -0.01em;
+  padding: 0 1.2rem;
+}
+.coverAuthor {
+  font-family: var(--font-book);
+  font-style: italic;
+  font-size: clamp(0.85rem, 1.6vw, 1.05rem);
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: -0.3rem;
+}
+.coverCount {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.coverHint {
+  margin-top: 0.6rem;
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+}
+.coverBack {
+  background: linear-gradient(135deg, #1e1815 0%, #2f2620 100%);
+}
+.awardBadge {
+  position: absolute;
+  left: clamp(1rem, 2.6vw, 1.8rem);
+  bottom: clamp(1rem, 2.6vw, 1.8rem);
+  width: 120px;
+}
+
+.counter {
+  text-align: center;
+  padding: 1.25rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
