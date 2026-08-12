@@ -1,8 +1,10 @@
-/* TipTap ProseMirror content styling — sans-serif reading surface. */
+/* TipTap ProseMirror content styling - sans-serif reading surface. */
 
 .body :global(.ProseMirror) {
   outline: none;
   min-height: 55vh;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .body :where(p) {
@@ -15,6 +17,11 @@
   line-height: 1.25;
   letter-spacing: -0.01em;
   color: var(--foreground);
+}
+
+/* Don't stack a big top gap onto the very first heading/paragraph. */
+.body :where(h1, h2, h3):first-child {
+  margin-top: 0;
 }
 
 .body :where(h1) {
@@ -42,7 +49,15 @@
 }
 
 .body :where(li) {
-  margin: 0.25em 0;
+  margin: 0.35em 0;
+}
+
+.body :where(li)::marker {
+  color: var(--muted-foreground);
+}
+
+.body :where(li p) {
+  margin-bottom: 0;
 }
 
 .body :where(code) {
@@ -93,4 +108,12 @@
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* Keyboard-only focus affordance for the contenteditable surface. Mouse
+   clicks don't show it; tabbing in (e.g. from the title field) does. */
+.body :global(.ProseMirror:focus-visible) {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--ring);
+  outline-offset: 6px;
 }

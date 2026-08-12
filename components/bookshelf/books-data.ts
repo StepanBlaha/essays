@@ -7,7 +7,7 @@ export type BookData = {
   color: string
 }
 
-// Restrained, muted palette — modern minimal.
+// Restrained, muted palette - modern minimal.
 export const BOOKS: BookData[] = [
   { id: "quiet-structures", title: "Quiet Structures", author: "M. Halden", description: "On the architecture of stillness and the spaces we leave intentionally empty.", color: "#c8c2b6" },
   { id: "grain", title: "Grain", author: "L. Sato", description: "A study of texture, material honesty, and the beauty of the unfinished surface.", color: "#b7796a" },

@@ -87,7 +87,7 @@ function Shelf({
     const g = group.current;
     if (!g) return;
     const dt = Math.min(dtRaw, 1 / 30);
-    // Gentle inertial drift after release, decaying into the damped follow —
+    // Gentle inertial drift after release, decaying into the damped follow -
     // reads as a soft coast rather than an abrupt stop.
     if (!dragging.current && Math.abs(velocity.current) > 0.0002) {
       offsetTarget.current = Math.max(
@@ -208,7 +208,7 @@ export function Bookshelf({
           <hemisphereLight
             args={["#f5f2ea", "#c9c2b2", 0.55]}
           />
-          {/* Key light — warm, soft-shadowed, from front-above. */}
+          {/* Key light - warm, soft-shadowed, from front-above. */}
           <directionalLight
             position={[3.2, 5.2, 4.4]}
             intensity={1.15}
@@ -222,9 +222,9 @@ export function Bookshelf({
               args={[-4, 4, 4, -4, 0.5, 14]}
             />
           </directionalLight>
-          {/* Fill — cool, low, opposite side, keeps shadow side legible. */}
+          {/* Fill - cool, low, opposite side, keeps shadow side legible. */}
           <directionalLight position={[-4.5, 1.6, 2.2]} intensity={0.28} color="#dce6f0" />
-          {/* Rim — behind the row, separates spines from the backdrop. */}
+          {/* Rim - behind the row, separates spines from the backdrop. */}
           <directionalLight position={[0, 2.4, -4]} intensity={0.4} color="#fffaf0" />
           <Suspense fallback={null}>
             <Shelf

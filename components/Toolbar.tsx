@@ -1,6 +1,7 @@
 "use client";
 
 import type { Editor } from "@tiptap/react";
+import { useEditorState } from "@tiptap/react";
 import {
   Bold,
   Italic,
@@ -28,11 +29,13 @@ import {
 
 function ToolbarToggle({
   label,
+  shortcut,
   active,
   onClick,
   children,
 }: {
   label: string;
+  shortcut?: string;
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
@@ -53,18 +56,23 @@ function ToolbarToggle({
           </Toggle>
         }
       />
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent>
+        {label}
+        {shortcut ? ` ${shortcut}` : ""}
+      </TooltipContent>
     </Tooltip>
   );
 }
 
 function ToolbarButton({
   label,
+  shortcut,
   onClick,
   disabled,
   children,
 }: {
   label: string;
+  shortcut?: string;
   onClick: () => void;
   disabled?: boolean;
   children: React.ReactNode;
@@ -87,13 +95,41 @@ function ToolbarButton({
           </Button>
         }
       />
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent>
+        {label}
+        {shortcut ? ` ${shortcut}` : ""}
+      </TooltipContent>
     </Tooltip>
   );
 }
 
 export default function Toolbar({ editor }: { editor: Editor | null }) {
-  if (!editor) return null;
+  // Re-derive active/pressed/can-undo states on every transaction (not just
+  // content updates), so moving the cursor keeps toggle states and the
+  // undo/redo disabled state accurate instead of going stale.
+  const state = useEditorState({
+    editor,
+    selector: ({ editor }) => {
+      if (!editor) return null;
+      return {
+        bold: editor.isActive("bold"),
+        italic: editor.isActive("italic"),
+        underline: editor.isActive("underline"),
+        strike: editor.isActive("strike"),
+        code: editor.isActive("code"),
+        h1: editor.isActive("heading", { level: 1 }),
+        h2: editor.isActive("heading", { level: 2 }),
+        blockquote: editor.isActive("blockquote"),
+        bulletList: editor.isActive("bulletList"),
+        orderedList: editor.isActive("orderedList"),
+        link: editor.isActive("link"),
+        canUndo: editor.can().undo(),
+        canRedo: editor.can().redo(),
+      };
+    },
+  });
+
+  if (!editor || !state) return null;
 
   const setLink = () => {
     const url = window.prompt("Link URL");
@@ -105,38 +141,48 @@ export default function Toolbar({ editor }: { editor: Editor | null }) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div
+      role="toolbar"
+      aria-label="Formatting"
+      aria-orientation="horizontal"
+      className="flex flex-wrap items-center gap-1"
+    >
       <ToolbarToggle
         label="Bold"
-        active={editor.isActive("bold")}
+        shortcut="⌘B"
+        active={state.bold}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
         <Bold />
       </ToolbarToggle>
       <ToolbarToggle
         label="Italic"
-        active={editor.isActive("italic")}
+        shortcut="⌘I"
+        active={state.italic}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <Italic />
       </ToolbarToggle>
       <ToolbarToggle
         label="Underline"
-        active={editor.isActive("underline")}
+        shortcut="⌘U"
+        active={state.underline}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
       >
         <Underline />
       </ToolbarToggle>
       <ToolbarToggle
         label="Strikethrough"
-        active={editor.isActive("strike")}
+        shortcut="⌘⇧S"
+        active={state.strike}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       >
         <Strikethrough />
       </ToolbarToggle>
       <ToolbarToggle
         label="Inline code"
-        active={editor.isActive("code")}
+        shortcut="⌘E"
+        active={state.code}
         onClick={() => editor.chain().focus().toggleCode().run()}
       >
         <Code />
@@ -146,21 +192,24 @@ export default function Toolbar({ editor }: { editor: Editor | null }) {
 
       <ToolbarToggle
         label="Heading 1"
-        active={editor.isActive("heading", { level: 1 })}
+        shortcut="⌘⌥1"
+        active={state.h1}
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
       >
         <Heading1 />
       </ToolbarToggle>
       <ToolbarToggle
         label="Heading 2"
-        active={editor.isActive("heading", { level: 2 })}
+        shortcut="⌘⌥2"
+        active={state.h2}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
       >
         <Heading2 />
       </ToolbarToggle>
       <ToolbarToggle
         label="Quote"
-        active={editor.isActive("blockquote")}
+        shortcut="⌘⇧B"
+        active={state.blockquote}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
       >
         <Quote />
@@ -170,23 +219,19 @@ export default function Toolbar({ editor }: { editor: Editor | null }) {
 
       <ToolbarToggle
         label="Bullet list"
-        active={editor.isActive("bulletList")}
+        active={state.bulletList}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       >
         <List />
       </ToolbarToggle>
       <ToolbarToggle
         label="Numbered list"
-        active={editor.isActive("orderedList")}
+        active={state.orderedList}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
       >
         <ListOrdered />
       </ToolbarToggle>
-      <ToolbarToggle
-        label="Link"
-        active={editor.isActive("link")}
-        onClick={setLink}
-      >
+      <ToolbarToggle label="Link" active={state.link} onClick={setLink}>
         <LinkIcon />
       </ToolbarToggle>
       <ToolbarButton
@@ -200,14 +245,16 @@ export default function Toolbar({ editor }: { editor: Editor | null }) {
 
       <ToolbarButton
         label="Undo"
-        disabled={!editor.can().undo()}
+        shortcut="⌘Z"
+        disabled={!state.canUndo}
         onClick={() => editor.chain().focus().undo().run()}
       >
         <Undo2 />
       </ToolbarButton>
       <ToolbarButton
         label="Redo"
-        disabled={!editor.can().redo()}
+        shortcut="⌘⇧Z"
+        disabled={!state.canRedo}
         onClick={() => editor.chain().focus().redo().run()}
       >
         <Redo2 />

@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
-// UI — modern minimal grotesque
+// UI - modern minimal grotesque
 const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-ui",

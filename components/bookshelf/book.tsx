@@ -133,12 +133,12 @@ export function Book({
       5,
       dt,
     );
-    // Fully open (cover lies flat to the left) — slightly slower than the
+    // Fully open (cover lies flat to the left) - slightly slower than the
     // body motion so the cover feels like it trails the turn.
     c.rotation.y = damp(c.rotation.y, isOpen ? -Math.PI : 0, 4.2, dt);
 
     // Subtle secondary motion: a light forward tilt on hover, eased away
-    // the moment the book opens or loses hover — layered on top of the
+    // the moment the book opens or loses hover - layered on top of the
     // book's static resting lean.
     const targetTiltX = !isOpen && isHovered ? -0.06 : 0;
     const targetTiltZ = (!isOpen ? variant.leanZ : 0) + (!isOpen && isHovered ? 0.015 : 0);
@@ -213,7 +213,7 @@ export function Book({
             <boxGeometry args={[W - 0.04, h - 0.06, pageDepth]} />
             <meshStandardMaterial color={PAGE} roughness={0.92} metalness={0} />
           </mesh>
-          {/* Inside title page — revealed as the cover swings open */}
+          {/* Inside title page - revealed as the cover swings open */}
           <group position={[0, 0, pageDepth / 2 + 0.001]}>
             <Text
               fontWeight={700}
@@ -253,7 +253,7 @@ export function Book({
               </Text>
             )}
           </group>
-          {/* Front cover — hinged on the spine */}
+          {/* Front cover - hinged on the spine */}
           <group
             ref={coverRef}
             position={[-W / 2, 0, pageDepth / 2 + COVER / 2]}

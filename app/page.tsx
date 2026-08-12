@@ -2,12 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, createEssay, createBook, deleteBook } from "@/lib/db";
+import { db, createEssay, createBook, deleteBook, deleteEssay } from "@/lib/db";
+import { importBundle } from "@/lib/share";
+import { SAMPLE_BUNDLE } from "@/lib/sample-data";
 import AppSidebar from "@/components/Sidebar";
 import Editor from "@/components/Editor";
 import Collection from "@/components/Collection";
 import { Library } from "@/components/library/Library";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { AllEssays } from "@/components/essays/AllEssays";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+
+const SEED_FLAG = "essays.seeded.v2";
 
 export default function Home() {
   const books =
@@ -19,10 +30,23 @@ export default function Home() {
       [],
     ) ?? [];
 
-  const [activeBookId, setActiveBookId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showShelf, setShowShelf] = useState(false);
+  const [showAllEssays, setShowAllEssays] = useState(false);
   const [readerBookId, setReaderBookId] = useState<string | null>(null);
+
+  // One-time demo seed: fill a small sample library on first ever load.
+  // Never re-seeds (flag), and skips if the library already has books.
+  useEffect(() => {
+    if (localStorage.getItem(SEED_FLAG)) return;
+    // Claim the flag synchronously so StrictMode's double-invoke can't double-seed.
+    localStorage.setItem(SEED_FLAG, "1");
+    (async () => {
+      if ((await db.books.count()) === 0) {
+        await importBundle(SAMPLE_BUNDLE);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (selectedId === null && essays.length > 0) {
@@ -32,36 +56,51 @@ export default function Home() {
 
   const selected = essays.find((e) => e.id === selectedId) ?? null;
 
-  // Essays can only be created into an existing book.
-  const handleNew = async () => {
-    const bookId = activeBookId ?? books[0]?.id;
-    if (!bookId) return;
-    const id = await createEssay(bookId);
+  const openEditor = (id: string) => {
     setSelectedId(id);
+    setShowShelf(false);
+    setShowAllEssays(false);
+  };
+
+  // New essays start unfiled; you add them to book(s) from the editor.
+  const handleNew = async () => {
+    const id = await createEssay([]);
+    openEditor(id);
   };
 
   const readerBook = books.find((b) => b.id === readerBookId) ?? null;
   const readerEssays = readerBookId
-    ? essays.filter((e) => e.bookId === readerBookId)
+    ? essays.filter((e) => e.bookIds.includes(readerBookId))
     : [];
 
   return (
     <SidebarProvider>
       <AppSidebar
         essays={essays}
-        canCreateEssay={books.length > 0}
+        showingLibrary={showShelf}
+        showingAllEssays={showAllEssays}
         onNew={handleNew}
-        onOpenBook={() => setShowShelf(true)}
+        onOpenBook={() => {
+          setShowShelf(true);
+          setShowAllEssays(false);
+        }}
+        onOpenAllEssays={() => {
+          setShowAllEssays(true);
+          setShowShelf(false);
+        }}
       />
 
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-6">
-          <span className="font-[family-name:var(--font-book)] text-sm font-medium text-muted-foreground">
+        <header className="flex h-14 min-h-14 shrink-0 items-center gap-2 border-b border-border px-3 sm:px-6">
+          <SidebarTrigger className="md:hidden" aria-label="Open menu" />
+          <span className="min-w-0 truncate font-[family-name:var(--font-book)] text-sm font-medium text-muted-foreground">
             {showShelf
               ? "Library"
-              : selected
-                ? selected.title.trim() || "Untitled"
-                : "Essays"}
+              : showAllEssays
+                ? "All essays"
+                : selected
+                  ? selected.title.trim() || "Untitled"
+                  : "Essays"}
           </span>
         </header>
 
@@ -71,23 +110,34 @@ export default function Home() {
               books={books}
               essays={essays}
               onClose={() => setShowShelf(false)}
-              onNewBook={async (data) => {
-                const id = await createBook(data);
-                setActiveBookId(id);
-              }}
+              onNewBook={(data) => createBook(data)}
               onDeleteBook={deleteBook}
               onEnterReader={(id) => {
                 setReaderBookId(id);
                 setShowShelf(false);
               }}
             />
+          ) : showAllEssays ? (
+            <AllEssays
+              essays={essays}
+              books={books}
+              onOpen={openEditor}
+              onDelete={deleteEssay}
+              onNew={handleNew}
+            />
           ) : selected ? (
-            <Editor essay={selected} />
+            <Editor key={selected.id} essay={selected} books={books} />
           ) : (
             <div className="grid h-full place-items-center px-6 text-center">
-              <p className="font-[family-name:var(--font-book)] text-lg text-muted-foreground italic">
-                An empty desk. Start your first essay.
-              </p>
+              <div className="flex flex-col items-center gap-4">
+                <p className="font-[family-name:var(--font-book)] text-lg text-muted-foreground italic">
+                  An empty desk. Start your first essay.
+                </p>
+                <Button onClick={handleNew}>
+                  <Plus aria-hidden="true" />
+                  New essay
+                </Button>
+              </div>
             </div>
           )}
         </main>
@@ -96,6 +146,7 @@ export default function Home() {
       {readerBook && (
         <Collection
           book={readerBook}
+          books={books}
           essays={readerEssays}
           onClose={() => {
             setReaderBookId(null);

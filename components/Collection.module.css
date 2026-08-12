@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   /* Re-evaluate foreground here (the overlay carries `.dark`) so inherited
-     text — e.g. ghost prev/next buttons — is light on the dark backdrop. */
+     text - e.g. ghost prev/next buttons - is light on the dark backdrop. */
   color: var(--foreground);
   background: rgba(18, 18, 18, 0.58);
   backdrop-filter: blur(10px);
@@ -27,11 +27,11 @@
   }
 }
 
-/* Inline edit panel — editing stays inside the collection page.
+/* Inline edit panel - editing stays inside the collection page.
    The reader overlay carries the `dark` class so shadcn tokens flip to
    dark values (readable text/borders on the translucent backdrop). This
    panel is a LIGHT surface, so we reset the token set locally back to
-   their light-mode values (copied from :root in globals.css) — this
+   their light-mode values (copied from :root in globals.css) - this
    keeps the Button/Editor primitives inside it correctly themed without
    touching globals.css or the ambient `dark` class on the overlay. */
 .editPanel {
@@ -171,7 +171,7 @@
 
 /* ---- A page (one face of a leaf) ---- */
 /* Pages are always light paper, regardless of the ambient `dark` class on
-   the reader overlay — reset the shadcn tokens locally (same light values
+   the reader overlay - reset the shadcn tokens locally (same light values
    as :root in globals.css) so the pencil edit Button on the page reads
    correctly instead of inheriting the overlay's dark-mode tokens. */
 .page {
@@ -211,11 +211,53 @@
 }
 .leafFace[role="button"] {
   cursor: pointer;
+  outline: none;
 }
 .leafFace[role="button"]:hover .pageTitle {
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
+}
+/* Focus ring drawn inset so it isn't clipped by the leaf's overflow:hidden. */
+.leafFace[role="button"]:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: -3px;
+  z-index: 2;
+}
+/* Discoverable page-turn affordance: a soft corner lift on hover/focus that
+   hints the whole page is clickable, without competing with reading text. */
+.page:not(.cover)::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.right.page:not(.cover)::after {
+  right: 0;
+  background: linear-gradient(135deg, transparent 55%, rgba(0, 0, 0, 0.07) 55%);
+  border-radius: 0 0 6px 0;
+}
+.left.page:not(.cover)::after {
+  left: 0;
+  background: linear-gradient(225deg, transparent 55%, rgba(0, 0, 0, 0.07) 55%);
+  border-radius: 0 0 0 6px;
+}
+@media (hover: hover) {
+  .leafFace[role="button"]:hover .page::after {
+    opacity: 1;
+  }
+}
+.leafFace[role="button"]:focus-visible .page::after {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page::after {
+    transition: none;
+  }
 }
 
 .pageInner {
@@ -510,8 +552,8 @@
   font-size: 9.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 999px;
   padding: 0.35rem 0.9rem;
 }
@@ -527,10 +569,25 @@
 
 .counter {
   text-align: center;
-  padding: 1.25rem;
+  padding: 1.25rem 1.25rem 1rem;
   color: var(--muted-foreground);
   font-family: var(--font-ui);
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+.hint {
+  margin-top: 0.4rem;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  opacity: 0.65;
+}
+.hint kbd {
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05rem 0.32rem;
+  color: var(--foreground);
 }

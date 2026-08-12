@@ -13,11 +13,6 @@ import type { Book, Essay } from "@/lib/db";
 import { readingTime } from "@/lib/export";
 import Editor from "@/components/Editor";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import styles from "./Collection.module.css";
 
 type Face =
@@ -89,10 +84,12 @@ function getReducedMotionServerSnapshot() {
 
 export default function Collection({
   book,
+  books,
   essays,
   onClose,
 }: {
   book: Book;
+  books: Book[];
   essays: Essay[];
   onClose: () => void;
 }) {
@@ -102,7 +99,7 @@ export default function Collection({
   const L = leaves.length;
 
   // Mount already open on the first interior spread (the user just opened
-  // this book in the 3D shelf) — the front cover is still reachable via prev().
+  // this book in the 3D shelf) - the front cover is still reachable via prev().
   const [flipped, setFlipped] = useState(1);
   const [busy, setBusy] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -116,6 +113,33 @@ export default function Collection({
     getReducedMotionServerSnapshot,
   );
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Focus management: return focus to whatever had it when the reader
+  // opens/closes, and move focus into/out of the inline edit panel so
+  // keyboard and screen-reader users never lose their place.
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const editDoneRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const editReturnFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    closeBtnRef.current?.focus();
+    return () => {
+      previousFocusRef.current?.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (editingId) {
+      editDoneRef.current?.focus();
+    } else {
+      editReturnFocusRef.current?.focus();
+    }
+  }, [editingId]);
 
   useEffect(() => {
     return () => {
@@ -196,27 +220,22 @@ export default function Collection({
               <div className={styles.pageText}>{text}</div>
             )}
           </div>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={styles.editBtn}
-                  aria-label="Edit essay"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingId(essay.id);
-                  }}
-                >
-                  <Pencil />
-                </Button>
-              }
-            />
-            <TooltipContent>Edit essay</TooltipContent>
-          </Tooltip>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={styles.editBtn}
+            aria-label="Edit essay"
+            title="Edit essay"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              editReturnFocusRef.current = e.currentTarget;
+              setEditingId(essay.id);
+            }}
+          >
+            <Pencil />
+          </Button>
           <span className={styles.pageNum}>{face.index + 1}</span>
         </div>
       );
@@ -252,7 +271,7 @@ export default function Collection({
                     <span className={styles.contentsMeta}>
                       {essay.text.trim()
                         ? `${readingTime(essay.text)} min`
-                        : "—"}
+                        : "-"}
                     </span>
                   </li>
                 ))}
@@ -311,43 +330,62 @@ export default function Collection({
     return [left, right].filter(Boolean).join("  ·  ");
   })();
 
+  // Only the leaf faces actually facing the reader may be focused, clicked,
+  // or exposed to assistive tech - every other face is mid-stack or rotated
+  // away and must never trap focus or leak its (hidden) content.
+  const visibleBackIndex = flipped > 0 ? flipped - 1 : -1;
+  const visibleFrontIndex = flipped < L ? flipped : -1;
+
   return (
     <div
       className={`${styles.overlay} ${closing ? styles.closing : ""} dark`}
       onClick={handleClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${bookTitle} - reader`}
     >
-      <div className={styles.header} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.header}
+        onClick={(e) => e.stopPropagation()}
+        inert={!!editingId}
+      >
         <span className={`${styles.brand} text-foreground`}>{bookTitle}</span>
-        <Button type="button" variant="outline" size="sm" onClick={handleClose}>
+        <Button
+          ref={closeBtnRef}
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleClose}
+        >
           <X data-icon="inline-start" />
           Close
         </Button>
       </div>
 
-      <div className={styles.stage} onClick={(e) => e.stopPropagation()}>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={styles.arrow}
-                onClick={prev}
-                disabled={!canPrev}
-                aria-label="Previous page"
-              >
-                <ChevronLeft />
-              </Button>
-            }
-          />
-          <TooltipContent>Previous page</TooltipContent>
-        </Tooltip>
+      <div
+        className={styles.stage}
+        onClick={(e) => e.stopPropagation()}
+        inert={!!editingId}
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={styles.arrow}
+          onClick={prev}
+          disabled={!canPrev}
+          aria-label="Previous page"
+          title="Previous page (←)"
+        >
+          <ChevronLeft />
+        </Button>
 
         <div className={styles.book}>
           {leaves.map((leaf, i) => {
             const isFlipped = i < flipped;
             const zIndex = isFlipped ? i : L - i;
+            const frontVisible = i === visibleFrontIndex;
+            const backVisible = i === visibleBackIndex;
             return (
               <div
                 key={i}
@@ -359,10 +397,20 @@ export default function Collection({
                 <div
                   className={styles.leafFace}
                   role="button"
-                  tabIndex={0}
+                  tabIndex={frontVisible ? 0 : -1}
+                  aria-hidden={!frontVisible}
+                  aria-label={
+                    frontVisible
+                      ? `${faceLabel(leaf.front, essays.length)} - turn page forward`
+                      : undefined
+                  }
+                  inert={!frontVisible}
                   onClick={next}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") next();
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      next();
+                    }
                   }}
                 >
                   {renderFace(leaf.front, "right")}
@@ -370,10 +418,20 @@ export default function Collection({
                 <div
                   className={`${styles.leafFace} ${styles.leafBack}`}
                   role="button"
-                  tabIndex={0}
+                  tabIndex={backVisible ? 0 : -1}
+                  aria-hidden={!backVisible}
+                  aria-label={
+                    backVisible
+                      ? `${faceLabel(leaf.back, essays.length)} - turn page back`
+                      : undefined
+                  }
+                  inert={!backVisible}
                   onClick={prev}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") prev();
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      prev();
+                    }
                   }}
                 >
                   {renderFace(leaf.back, "left")}
@@ -383,28 +441,32 @@ export default function Collection({
           })}
         </div>
 
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={styles.arrow}
-                onClick={next}
-                disabled={!canNext}
-                aria-label="Next page"
-              >
-                <ChevronRight />
-              </Button>
-            }
-          />
-          <TooltipContent>Next page</TooltipContent>
-        </Tooltip>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={styles.arrow}
+          onClick={next}
+          disabled={!canNext}
+          aria-label="Next page"
+          title="Next page (→)"
+        >
+          <ChevronRight />
+        </Button>
       </div>
 
-      <div className={styles.counter} onClick={(e) => e.stopPropagation()}>
-        {counterText}
+      <div
+        className={styles.counter}
+        onClick={(e) => e.stopPropagation()}
+        inert={!!editingId}
+      >
+        <div role="status" aria-live="polite">
+          {counterText}
+        </div>
+        <div className={styles.hint}>
+          <kbd>←</kbd> <kbd>→</kbd> turn pages · click a page ·{" "}
+          <kbd>Esc</kbd> close
+        </div>
       </div>
 
       {editingEssay && (
@@ -417,6 +479,7 @@ export default function Collection({
               {editingEssay.title.trim() || "Untitled"}
             </span>
             <Button
+              ref={editDoneRef}
               type="button"
               variant="default"
               onClick={() => setEditingId(null)}
@@ -425,7 +488,7 @@ export default function Collection({
             </Button>
           </div>
           <div className={styles.editBody}>
-            <Editor key={editingEssay.id} essay={editingEssay} />
+            <Editor key={editingEssay.id} essay={editingEssay} books={books} />
           </div>
         </div>
       )}

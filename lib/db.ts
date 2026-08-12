@@ -3,11 +3,12 @@ import { BOOKS } from "@/components/bookshelf/books-data";
 
 export interface Essay {
   id: string;
-  bookId: string;
+  /** Books this essay belongs to. Empty = unfiled. Many-to-many. */
+  bookIds: string[];
   title: string;
-  /** TipTap-serialized HTML — source of truth for rendering */
+  /** TipTap-serialized HTML - source of truth for rendering */
   html: string;
-  /** Plain text mirror — used for search + reading-time on the list */
+  /** Plain text mirror - used for search + reading-time on the list */
   text: string;
   createdAt: number;
   updatedAt: number;
@@ -32,7 +33,7 @@ class CandlelightDB extends Dexie {
   books!: Table<Book, string>;
 
   constructor() {
-    super("candlelight-2");
+    super("candlelight-3");
     this.version(1).stores({
       // primary key `id`; indexes for sort + title search
       essays: "id, updatedAt, title",
@@ -56,10 +57,26 @@ class CandlelightDB extends Dexie {
           updatedAt: now,
         });
         await tx
-          .table<Essay, string>("essays")
+          .table("essays")
           .toCollection()
-          .modify((essay) => {
-            essay.bookId = defaultBookId;
+          .modify((essay: { bookId?: string }) => {
+            (essay as { bookId?: string }).bookId = defaultBookId;
+          });
+      });
+
+    // Many-to-many: an essay can belong to zero or many books.
+    this.version(3)
+      .stores({
+        essays: "id, *bookIds, updatedAt, title",
+        books: "id, updatedAt, title",
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table("essays")
+          .toCollection()
+          .modify((essay: { bookId?: string; bookIds?: string[] }) => {
+            essay.bookIds = essay.bookId ? [essay.bookId] : [];
+            delete essay.bookId;
           });
       });
   }
@@ -76,7 +93,7 @@ export function uuid(): string {
 
 /**
  * Idempotently seeds the shelf with sample books from `BOOKS`.
- * Never overwrites existing books — safe to call on every app init.
+ * Never overwrites existing books - safe to call on every app init.
  */
 export async function seedBooks(): Promise<void> {
   const now = Date.now();
@@ -121,19 +138,28 @@ export async function updateBook(
   await db.books.update(id, { ...patch, updatedAt: Date.now() });
 }
 
+/** Delete a book. Its essays are kept - the book is just removed from their
+ *  `bookIds` (an essay in no books becomes "unfiled", not deleted). */
 export async function deleteBook(id: string): Promise<void> {
   await db.transaction("rw", db.books, db.essays, async () => {
-    await db.essays.where("bookId").equals(id).delete();
+    await db.essays
+      .where("bookIds")
+      .equals(id)
+      .modify((essay) => {
+        essay.bookIds = essay.bookIds.filter((b) => b !== id);
+        essay.updatedAt = Date.now();
+      });
     await db.books.delete(id);
   });
 }
 
-export async function createEssay(bookId: string): Promise<string> {
+/** Create an essay, optionally already filed into one or more books. */
+export async function createEssay(bookIds: string[] = []): Promise<string> {
   const now = Date.now();
   const id = uuid();
   await db.essays.add({
     id,
-    bookId,
+    bookIds,
     title: "",
     html: "",
     text: "",
@@ -141,6 +167,14 @@ export async function createEssay(bookId: string): Promise<string> {
     updatedAt: now,
   });
   return id;
+}
+
+/** Set exactly which books an essay belongs to. */
+export async function setEssayBooks(
+  id: string,
+  bookIds: string[],
+): Promise<void> {
+  await db.essays.update(id, { bookIds, updatedAt: Date.now() });
 }
 
 export async function saveEssay(

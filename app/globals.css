@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================
-   Essays — minimalist black & white, book-like writing surface.
+   Essays - minimalist black & white, book-like writing surface.
    ============================================================ */
 
 :root {
@@ -15,7 +15,7 @@
   --muted: oklch(0.97 0 0);
   --faint: #a6a6a6;
 
-  /* Surfaces — neutral, aligned with shadcn tokens */
+  /* Surfaces - neutral, aligned with shadcn tokens */
   --app-bg: oklch(0.97 0 0); /* the desk behind the book (neutral) */
   --page: #ffffff; /* the paper */
   --page-edge: #f6f6f4; /* stacked page edges */
@@ -159,11 +159,20 @@ body {
     font-family: inherit;
     cursor: pointer;
   }
+
+  /* Visible focus fallback for any interactive element that doesn't ship
+     its own focus-visible ring (shadcn components already provide theirs
+     and win the cascade because Tailwind utilities are layered above
+     @layer base). Keeps keyboard navigation legible app-wide. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 ::selection {
-  background: var(--ink);
-  color: var(--page);
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 /* Minimal monochrome scrollbars */
@@ -187,11 +196,16 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -218,7 +232,7 @@ body {
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted-foreground);
+  --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
