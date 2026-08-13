@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, createEssay, createBook, deleteBook, deleteEssay } from "@/lib/db";
-import { importBundle } from "@/lib/share";
-import { SAMPLE_BUNDLE } from "@/lib/sample-data";
 import AppSidebar from "@/components/Sidebar";
 import Editor from "@/components/Editor";
 import Collection from "@/components/Collection";
@@ -17,8 +15,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-
-const SEED_FLAG = "essays.seeded.v2";
 
 export default function Home() {
   const books =
@@ -34,19 +30,6 @@ export default function Home() {
   const [showShelf, setShowShelf] = useState(false);
   const [showAllEssays, setShowAllEssays] = useState(false);
   const [readerBookId, setReaderBookId] = useState<string | null>(null);
-
-  // One-time demo seed: fill a small sample library on first ever load.
-  // Never re-seeds (flag), and skips if the library already has books.
-  useEffect(() => {
-    if (localStorage.getItem(SEED_FLAG)) return;
-    // Claim the flag synchronously so StrictMode's double-invoke can't double-seed.
-    localStorage.setItem(SEED_FLAG, "1");
-    (async () => {
-      if ((await db.books.count()) === 0) {
-        await importBundle(SAMPLE_BUNDLE);
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     if (selectedId === null && essays.length > 0) {
