@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Essays
 
-## Getting Started
+A quiet, book-like place to write. Essays is a local-first writing app where your
+work lives in your browser: no account, no server, no sync. You write essays,
+shelve them into books, and read them back on a warm, distraction-free surface.
 
-First, run the development server:
+## Features
+
+- **Rich text editor** built on TipTap, with Markdown input, a character/word
+  count, and reading-time estimates.
+- **Books and essays** with a many-to-many relationship: an essay can live in
+  zero, one, or many books, and deleting a book never deletes its essays (they
+  simply become unfiled).
+- **A library shelf** with a 3D bookshelf view for browsing your collections.
+- **Reader mode** for reading a whole book as a collection.
+- **Local-first storage** via IndexedDB (Dexie). Everything stays on your device.
+- **Portable collections**: export or import books as a downloadable `.json`
+  file, or as a copy/paste share code, so you can hand a collection to someone
+  else. Individual essays export to Markdown and PDF.
+- **Light and dark** themes with a calm, paper-like design.
+
+## Tech stack
+
+- [Next.js 16](https://nextjs.org) (App Router) and React 19
+- [TipTap](https://tiptap.dev) for the editor
+- [Dexie](https://dexie.org) over IndexedDB for storage
+- [Tailwind CSS 4](https://tailwindcss.com) and [shadcn/ui](https://ui.shadcn.com)
+- [React Three Fiber](https://r3f.docs.pmnd.rs) and Three.js for the bookshelf
+- TypeScript throughout
+
+## Getting started
+
+Install dependencies and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` starts the development server
+- `npm run build` creates a production build
+- `npm run start` serves the production build
+- `npm run lint` runs ESLint
 
-## Learn More
+## Data and privacy
 
-To learn more about Next.js, take a look at the following resources:
+All content is stored locally in your browser's IndexedDB (database name
+`candlelight-3`). Nothing is sent anywhere. Clearing your browser data or using
+a different browser or device will not carry your essays over unless you export
+them first. Use the collection export to back up or move your work.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/` Next.js routes, layout, and global styles
+- `components/` editor, sidebar, library, reader, and UI primitives
+- `lib/db.ts` Dexie schema, migrations, and data helpers
+- `lib/export.ts`, `lib/share.ts` export, import, and share helpers
+- `hooks/` small React hooks
